@@ -246,23 +246,26 @@ export default class Dashboard extends React.Component {
         <Doughnut style={parentcontainer}
         
           data={{
-            labels: ['Pendng with Purchase Manager', 'Pendng with Department Manager', 'Pendng with General Manager', 'Pendng with Asst.General Manager'],
+            labels: ['Pending with Purchase Manager', 'Pending with Department Manager', 'Pending with General Manager',
+            // 'Pending with Asst.General Manager'
+            ],
             datasets: [
               {
                 label: 'Request Status',
-           backgroundColor: [
+            backgroundColor: [
              '#B21F00',
              '#C9DE00',
              '#2FDE00',
            ],
-           hoverBackgroundColor: [
+            hoverBackgroundColor: [
            '#501800',
            '#4B5000',
            '#175000',
            ], 
           
-           data: [this.state.PMPending,this.state.DMPending,this.state.GMPending,this.state.AGMPending]  
-              }
+            data: [this.state.PMPending,this.state.DMPending,this.state.GMPending,
+            //this.state.AGMPending
+            ]}
             ]
               
           }}

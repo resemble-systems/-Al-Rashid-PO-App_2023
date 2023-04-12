@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import {Link} from 'react-router-dom';
 import { Row,Col,Card, FormGroup,Input, Label } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
@@ -20,6 +21,7 @@ export default class MyTasks extends Component {
             CurrentStatus:"All",
             DataValue: "True",
             DepartmentFilter:"All",
+            AutoTaskAllowed: true,
         };
         
     }
@@ -104,11 +106,13 @@ export default class MyTasks extends Component {
         //console.log("Task Details in grid", this.state.TaskDetails);
         //console.log("Currnet User in state", this.state.CurrentUserID);
         //console.log("Currnet Status", this.state.CurrentStatus);
-        //console.log(this.state.CurrentUserID)
+        
         const tableContainer = {width:"100%"};
         const headerStyle = {display:"flex"};
         const parentcontainer = {minWidth:"100%",maxWidth:"100%"};
         let TaskDetails = this.state.TaskDetails;
+        console.log("TaskDetails", TaskDetails);
+        let AutoTaskInitial = TaskDetails && TaskDetails.length > 0? TaskDetails[0] : null;
         
         
         if(this.state.CurrentStatus === "In Progress"){
@@ -116,6 +120,7 @@ export default class MyTasks extends Component {
                 this.setState({
                     TaskDetails:r.filter(item => item.AssignedToId === this.state.CurrentUserID),
                     CurrentStatus:"",
+                    AutoTaskAllowed: true
                  })    
             )
          }
@@ -125,6 +130,7 @@ export default class MyTasks extends Component {
                 this.setState({
                     TaskDetails:r.filter(item => item.AssignedToId === this.state.CurrentUserID ),
                     CurrentStatus:"",
+                    AutoTaskAllowed: false
                  })    
             )
          }
@@ -159,7 +165,14 @@ export default class MyTasks extends Component {
                                         <button className="btn btn-sm btn-success mr-2 ml-2 btn-cancel" onClick={this.searchData} type="button">Search</button>
                                         <button className="btn btn-sm btn-danger" onClick={this.resetSearch} type="button">Reset</button>
                                     </div>
-                            </div>                               
+                            </div>
+                            {AutoTaskInitial && this.state.AutoTaskAllowed?
+                            <div className="col-md-4 d-flex align-items-end">
+                                <Link className="table-anchor mx-auto" to={`/po-request/TaskviewAuto/${AutoTaskInitial.Title}/${AutoTaskInitial.Id}`}>
+                                    <button className="btn p-3 btn-sm btn-success btn-cancel" onClick={this.resetSearch} type="button">Start Approval in  Sequence</button>
+                                </Link>
+                            </div>
+                            :null}                              
                             </FormGroup>
                         </form>     
                 </Card>

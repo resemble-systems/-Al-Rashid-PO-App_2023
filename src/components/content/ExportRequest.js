@@ -118,14 +118,15 @@ export default class ExportPORequest extends Component{
         { title: 'Request Status', field: 'RequestStatus' },
         { title: 'Approval Status', field: 'ApprovalStatus' },
         { title: 'Pending with', field: 'PendingWith' },
-        { title: 'Responded Date', field: 'RespondedDate', }
+        // { title: 'Responded Date', field: 'RespondedDate', }
       ]}
       data={this.state.PODetails}   
       options={{
         exportButton: true,
-        pageSize: 50,
+        pageSize: 100,
         isLoading: true,
         exportAllData: true,
+        pageSizeOptions:[100,500,2000,5000],
       }}
       />
     

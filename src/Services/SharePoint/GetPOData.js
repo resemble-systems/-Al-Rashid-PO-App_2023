@@ -3,7 +3,7 @@ import Moment from 'react-moment';
 import NumberFormat from 'react-number-format'
 
        const GetPOData = async (listname) => {
-            const resp = await fetch(`/sites/apps/PMO/_api/web/lists/GetByTitle('${listname}')/items?&$top=100&$orderby=ID%20desc')`, {
+            const resp = await fetch(`/sites/apps/PMO/_api/web/lists/GetByTitle('${listname}')/items?&$top=10000&$orderby=ID%20desc')`, {
                 headers: {
                     'Content-Type': 'application/json',
                     "Accept": "application/json; odata=verbose"

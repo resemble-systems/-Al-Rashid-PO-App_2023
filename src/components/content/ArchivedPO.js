@@ -237,7 +237,7 @@ export default class ArchivedPO extends Component {
                 <ArchivedPOTable PODetails={RequestDetails}></ArchivedPOTable>
                 
                 <br></br>
-                <Col md={12}>
+                {/* <Col md={12}>
                         <div id="pagination">
                         <Button size="sm" color="primary">1</Button>{' '}
                         <Button size="sm" color="primary"  onClick={() =>this.GetNextPagePO(SecPageItems)}>2</Button>{' '}
@@ -254,7 +254,7 @@ export default class ArchivedPO extends Component {
                         <Button  size="sm" color="primary" onClick={() =>this.GetFinalPagePO(TwelthPageItem)}>13</Button>{' '}
                         
                         </div> 
-                        </Col>
+                        </Col> */}
                         <br></br>
             </div>
         )

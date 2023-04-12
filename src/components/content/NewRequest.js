@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Redirect } from "react-router-dom";
+import { Spinner } from "reactstrap";
 import axios from "axios";
 import {
   Row,
@@ -23,6 +24,8 @@ import GetDepartments from "../../Services/SharePoint/GetDMList";
 import CreatePO from "../../Services/SharePoint/CreateListItem";
 import CommitAttachmentToDB from "../../Services/AttachmentUpload/CommitAttachments";
 import GetListItemByID from "../../Services/SharePoint/GetListItemByID";
+import GetTasks from '../../Services/SharePoint/GetTaskListitem';
+import GetCurrentUserid from '../../Services/SharePoint/GetCurrentLoinUserID';
 import swal from "sweetalert";
 import $ from "jquery";
 let DisableSubmit;
@@ -31,9 +34,10 @@ class NewRequest extends Component {
     super();
     this.state = {
       GMReviewalStatus:"",
-        DisableGMButtons:true,
+      DisableGMButtons:true,
       redirectMyRequest: false,
       redirectMyTask: false,
+      CurrentUserID:null,
       podetails: {
         POItems: [],
         POAdditionalInfo: [],
@@ -41,6 +45,11 @@ class NewRequest extends Component {
       Departments: {},
       SelectedDepartment: "",
       AttachmentsReferenceNumber: null,
+      TaskDetails: null,
+      CurrentTitle: "",
+      CurrentId: 0,
+      LoadingWorkFlow: true,
+      LoadingPMO: true,
     };
   }
 
@@ -56,8 +65,16 @@ class NewRequest extends Component {
         });
       });
     } else if (
-      this.props.match.params.mode === "Taskview"
+      this.props.match.params.mode === "Taskview" || this.props.match.params.mode === "TaskviewAuto"
     ) {
+      if(this.props.match.params.mode === "TaskviewAuto") {
+        if(this.state.CurrentUserID == null)
+        GetCurrentUserid().then(u => 
+            this.setState({
+            CurrentUserID:u,  
+            })
+        );
+      }
       GetListItemByID("Workflow Tasks", this.props.match.params.TaskId).then(
        
         (TD) => {
@@ -74,11 +91,13 @@ class NewRequest extends Component {
           }
          
           this.setState({
+            CurrentId: this.props.match.params.TaskId,
             TaskCode: TD.Body,
             ReviewalTask: check,
             PMCcheck:PMCcheck,
             DMCcheck:DMCcheck,
-            TaskStatus:TD.Status
+            TaskStatus:TD.Status,
+            LoadingWorkFlow: false
           });
 
           console.log("chk", check);
@@ -94,7 +113,9 @@ class NewRequest extends Component {
           AL01: PO.ApprovalLogRecord,
           RequestStage: PO.PendingWith,
           RequestSatge01: PO.bdck,
-          GMReviewalStatus:PO.ReviewalStatus
+          GMReviewalStatus:PO.ReviewalStatus,
+          LoadingPMO: false,
+          CurrentTitle: this.props.match.params.id
         });
       });
     }
@@ -138,7 +159,7 @@ class NewRequest extends Component {
   createPOItemHandler = (e) => {
     e.preventDefault();
     if (this.state.SelectedDepartment === "") {
-      swal("Deepartment Input is Empty!!");
+      swal("Department Input is Empty!!");
     } else {
       DisableSubmit = () => {
         this.refs.Btn.setAttribute("disabled", "disabled");
@@ -190,9 +211,12 @@ class NewRequest extends Component {
     })
   }
   RespondRequest(Decession, ID) {
+    let TaskId= this.props.match.params.mode === "TaskviewAuto"? this.state.CurrentId : ID;
     var Comments =document.getElementById("Comments01").value
-    
-    var TaskId= ID
+    this.setState({
+      LoadingPMO: true,
+      LoadingWorkFlow: true,
+    })
       console.log(Comments)
     GetDigest().then((response) => {
       console.log("latest2222222222",response);
@@ -243,7 +267,7 @@ class NewRequest extends Component {
       
      // URL here is the direct uri to the item which can be obtained by doing a GET request for the item and reading data.__metadata.uri from the response
       $.ajax({
-        url: `/sites/apps/PMO/_api/Web/Lists/GetByTitle('Workflow Tasks')/Items(${ID})`,
+        url: `/sites/apps/PMO/_api/Web/Lists/GetByTitle('Workflow Tasks')/Items(${TaskId})`,
         type: "POST",
         contentType: "application/json;odata=verbose",
         data: JSON.stringify(dataToPost),
@@ -265,18 +289,90 @@ class NewRequest extends Component {
         },
       });
     }).then(() => {
-        this.setState({
-            redirectMyTask:true
-          })
+      if(this.props.match.params.mode === "TaskviewAuto"){
+        this.RedirectToNextTask();
+      }
+      else{
+        this.RedirectMyTaskPage();
+      }
      })
   }
+  RedirectToNextTask=()=>{
+    this.setState({
+      LoadingPMO: true,
+      LoadingWorkFlow: true,
+    })
+    if(this.props.match.params.mode === "TaskviewAuto"){
+      let index = this.state.TaskDetails.findIndex(task => task.Id == this.state.CurrentId && task.Title == this.state.CurrentTitle);
+      if(index < this.state.TaskDetails.length-1){
+        let nextValue = this.state.TaskDetails[index + 1].Title;
+        let nextId = this.state.TaskDetails[index + 1].Id;
+        console.log("here2", nextValue, nextId);
+        this.setState({
+          CurrentTitle: nextValue,
+          CurrentId: nextId,
+        });
+        GetListItemByID("Workflow Tasks", nextId).then(
+       
+          (TD) => {
+            console.log(TD)
+            
+            var check = TD.Body.includes("RW");
+            var DMCcheck =TD.Body.includes("DMC");
+            var PMCcheck =TD.Body.includes("PMC");
+            
+            if(PMCcheck===true || DMCcheck===true ){
+              this.setState({
+                 DisableGMButtons:false
+                });
+            }
+           
+            this.setState({
+              TaskCode: TD.Body,
+              ReviewalTask: check,
+              PMCcheck:PMCcheck,
+              DMCcheck:DMCcheck,
+              TaskStatus:TD.Status,
+              LoadingWorkFlow: false
+            });
+  
+            console.log("chk", check);
+          }
+        );
+  
+        GetListItemByID("PMO", nextValue).then((PO) => {
+          //console.log("date returned",PO)
+          this.setState({
+            podetails: JSON.parse(PO.POJSONData),
+            SelectedDepartment: PO.ozud,
+            AttachmentsReferenceNumber: PO.AttachmentReferenceNumber,
+            AL01: PO.ApprovalLogRecord,
+            RequestStage: PO.PendingWith,
+            RequestSatge01: PO.bdck,
+            GMReviewalStatus:PO.ReviewalStatus,
+            LoadingPMO: false
+          });
+        });
+      }
+      else{
+        this.RedirectMyTaskPage();
+      }
+    }
+  }
+
   RedirectMyTaskPage=()=>{
       this.setState({
         redirectMyTask:true
-      })
+      });
   }
   render() {
-    console.log("rw", this.state.GMReviewalStatus);
+    if(this.state.TaskDetails == null && this.state.CurrentUserID) {
+      GetTasks('Workflow Tasks',this.state.CurrentUserID).then(r => 
+          this.setState({
+              TaskDetails:[...r.filter(item => item.AssignedToId === this.state.CurrentUserID )],
+          })
+      )
+    }
     if (this.state.redirectMyRequest === true) {
       return <Redirect to="/pages/my-requests" />;
     }
@@ -295,7 +391,20 @@ class NewRequest extends Component {
     let ApprovalButton = null;
     let ApprovalLog = null;
     let GMReviewalStatus =null;
-    if (this.props.match.params.mode === "Taskview" && this.state.TaskStatus !== "Completed") {
+    let ButtonsWidth = this.props.match.params.mode === "TaskviewAuto"? 12 : 12;
+
+    let HoldButton = this.props.match.params.mode === "TaskviewAuto" && this.state.TaskDetails? (
+      <Button id="AppButton"
+        onClick={() =>
+          this.RedirectToNextTask()
+        }
+      >
+        Hold
+      </Button>
+    ) : null;
+
+    if ((this.props.match.params.mode === "Taskview" || this.props.match.params.mode === "TaskviewAuto") &&
+    this.state.TaskStatus !== "Completed") {
 
       GMReviewalStatus = (
         <>
@@ -315,26 +424,42 @@ class NewRequest extends Component {
         <>
         
           <Card>
-          {this.state.RequestStage === "General MGR" &&
-          this.state.ReviewalTask === false && this.state.DisableGMButtons === true ? (
-            <div>
-          {this.state.GMReviewalStatus == "N/R"?(
-               
-               <div>
-                 <FontAwesomeIcon icon={faBars} className="mr-2" />
-                  <h5 className="form-header" id="RWContents">Assistant Manager Reviewal Status</h5><Button color="danger" id="RWButton">Pending</Button>{' '}
-               </div>
-              
-             ):  <div>
-             <FontAwesomeIcon icon={faBars} className="mr-2" />
-              <h5 className="form-header" id="RWContents">Assistant Manager Reviewal Status</h5>  
-           </div>}
-           </div>
-
+            {this.state.RequestStage === "General MGR" &&
+            this.state.ReviewalTask === false &&
+            this.state.DisableGMButtons === true ? (
+              <div>
+                {this.state.GMReviewalStatus == "N/R" ? (
+                  <div>
+                    <FontAwesomeIcon icon={faBars} className="mr-2" />
+                    <h5 className="form-header" id="RWContents">
+                      Assistant Manager Reviewal Status
+                    </h5>
+                    {/* <Button color="danger" id="RWButton">
+                      Pending
+                    </Button> */}
+                    <button type="button" class="btn btn-danger">
+                      Pending
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <FontAwesomeIcon icon={faBars} className="mr-2" />
+                    <h5 className="form-header" id="RWContents">
+                      Assistant Manager Reviewal Status
+                    </h5>
+                    <button class="btn btn-success" id="RWButton">
+                      Completed
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : null}
-          <div>
-          <FontAwesomeIcon icon={faBars} className="mr-2" />
-            <h5 id="ALog" className="form-header">Approval Log</h5></div>
+            <div>
+              <FontAwesomeIcon icon={faBars} className="mr-2" />
+              <h5 id="ALog" className="form-header">
+                Approval Log
+              </h5>
+            </div>
             <div
               id="VResponse"
               dangerouslySetInnerHTML={{
@@ -345,7 +470,6 @@ class NewRequest extends Component {
         </>
       );
       ApprovalButton = (
-        
         <>
         <br></br>
         <FormGroup>
@@ -354,7 +478,8 @@ class NewRequest extends Component {
       </FormGroup>
       {this.state.RequestStage === "Asst.Gen.MGR" ? (
             <Row>
-              <Col md={12} id="ApprovalButtons">
+              <Col md={ButtonsWidth} id="ApprovalButtons">
+              {HoldButton}
               <Button id="AppButton"
                 onClick={() =>
                   this.RespondRequest("Approve", this.props.match.params.TaskId)
@@ -370,12 +495,12 @@ class NewRequest extends Component {
                 Reject
               </Button></Col>
               </Row>
-
 ) : null}
           {this.state.RequestStage === "Purchase MGR" ? (
             <Row>
                 
-              <Col md={12} id="ApprovalButtons">
+              <Col md={ButtonsWidth} id="ApprovalButtons">
+              {HoldButton}
                 <Button id="AppButton"
                   onClick={() =>
                     this.RespondRequest(
@@ -410,9 +535,9 @@ class NewRequest extends Component {
           ) : null}
           {this.state.RequestStage === "General MGR" &&
           this.state.ReviewalTask === false && this.state.DisableGMButtons === true ? (
-            <div>
             <Row>
-                <Col md={12} id="ApprovalButtons">
+                <Col md={ButtonsWidth} id="ApprovalButtons">
+                {HoldButton}
               <Button id="AppButton"
                 onClick={() =>
                   this.RespondRequest("Approve", this.props.match.params.TaskId)
@@ -455,12 +580,13 @@ class NewRequest extends Component {
                 Reject
               </Button>
               </Col>
-            </Row></div>
+            </Row>
           ) : null}
 
           {this.state.RequestStage === "Depart. MGR" ? (
             <Row>
-                <Col md={12} id="ApprovalButtons">
+                <Col md={ButtonsWidth} id="ApprovalButtons">
+                {HoldButton}
               <Button id="AppButton"
                 onClick={() =>
                   this.RespondRequest("Approve", this.props.match.params.TaskId)
@@ -489,7 +615,8 @@ class NewRequest extends Component {
 
           {this.state.ReviewalTask === true ? (
             <Row>
-                   <Col md={12} id="ApprovalButtons">
+                   <Col md={ButtonsWidth} id="ApprovalButtons">
+                   {HoldButton}
               <Button id="AppButton"
                 onClick={() =>
                   this.RespondRequest("Review", this.props.match.params.TaskId)
@@ -510,7 +637,8 @@ class NewRequest extends Component {
 
 {this.state.RequestSatge01 === "GMClarification" &&(this.state.DMCcheck === true || this.state.PMCcheck === true)?  (
   <Row>
-  <Col md={12} id="ApprovalButtons">
+  <Col md={ButtonsWidth} id="ApprovalButtons">
+  {HoldButton}
   <Button id="AppButton"
                 onClick={() =>
                   this.RespondRequest("Submit", this.props.match.params.TaskId)
@@ -533,7 +661,9 @@ class NewRequest extends Component {
     }
     if (
       this.props.match.params.mode === "view" ||
-      this.props.match.params.mode === "Taskview" ||  this.props.match.params.mode === "ArchivedPOview" 
+      this.props.match.params.mode === "Taskview" ||
+      this.props.match.params.mode === "TaskviewAuto" || 
+      this.props.match.params.mode === "ArchivedPOview" 
     ) {
       Terms = (
         <>
@@ -586,7 +716,9 @@ class NewRequest extends Component {
       );
     } else if (
       this.props.match.params.mode === "view" ||
-      this.props.match.params.mode === "Taskview"  ||  this.props.match.params.mode === "ArchivedPOview" 
+      this.props.match.params.mode === "Taskview" ||
+      this.props.match.params.mode === "TaskviewAuto" ||
+      this.props.match.params.mode === "ArchivedPOview" 
     ) {
       DepartmentInput = (
         <Input
@@ -914,7 +1046,14 @@ class NewRequest extends Component {
         </Card>
         {GMReviewalStatus}
         {ApprovalLog}
-        {ApprovalButton}
+        {this.state.LoadingWorkFlow && this.state.LoadingPMO && this.props.match.params.mode === "TaskviewAuto"?
+          <div className="text-center">
+            <Spinner className="mr-3 my-5" animation="border" variant="secondary" />
+            <span>Loading Next Task ...</span>
+          </div>
+          :
+          ApprovalButton
+        }
       </div>
     );
   }

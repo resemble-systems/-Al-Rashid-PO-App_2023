@@ -19,19 +19,27 @@ class FileUpload extends Component {
    RefID:null,
    uploadedFiles:[],
    uploading:false,
-   deleting:false
+   deleting:false,
+   attachmentDataLoading: false,
    }
  }
 
  componentDidMount(){
   
-  if(this.props.mode === 'view' ||this.props.mode === 'ArchivedPOview' ||this.props.mode === 'Taskview' ){
+  if(this.props.mode === 'view' || this.props.mode === 'ArchivedPOview' || this.props.mode === 'Taskview' || this.props.mode === 'TaskviewAuto' ){
    console.log("RefID View Mode", this.props.AttachmentRefID)
-   this.setState({RefID:this.props.AttachmentRefID},this.UpdateAttachmentDetailsInView)
+   this.setState({RefID:this.props.AttachmentRefID, attachmentDataLoading: true},this.UpdateAttachmentDetailsInView)
   }else{
      const RefID = uuidv1();
      this.setState({RefID:RefID});
   }
+ }
+
+ componentDidUpdate(){
+   if(this.props.mode === 'view' || this.props.mode === 'ArchivedPOview' || this.props.mode === 'Taskview' || this.props.mode === 'TaskviewAuto' ){
+      if(this.state.RefID != this.props.AttachmentRefID)
+      this.setState({RefID:this.props.AttachmentRefID, attachmentDataLoading: true},this.UpdateAttachmentDetailsInView)
+   }
  }
 
  UpdateAttachmentDetailsInView = ()=>{
@@ -41,7 +49,8 @@ class FileUpload extends Component {
        // const uploadedFiles = [...this.state.uploadedFiles];
        // uploadedFiles.push(JSON.parse(d));
        this.setState({
-        uploadedFiles:JSON.parse(d)
+        uploadedFiles:JSON.parse(d),
+        attachmentDataLoading: false
        })
     })
  }
@@ -100,6 +109,9 @@ deleteAttachment = (deletedItem)=>{
   let attachmentTable;
   let attachmentControl
   let uploadButton;
+  if(this.state.attachmentDataLoading == "true") {
+   attachmentTable = <tr className="text-center"><td colSpan="3">Attachments Loading...</td></tr>
+  }
   if (this.state.uploadedFiles.length > 0){
    attachmentTable= this.state.uploadedFiles.map((item,index) =>
         <tr key={index}>
