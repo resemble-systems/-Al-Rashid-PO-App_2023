@@ -1,5 +1,5 @@
 const SendOTP = async (recipient,ponumber, otp) => {
-    const resp = await fetch(`https://po-webapi.alrashidabetong.com/api/PODetails?recepient=${recipient}&PONumber=${ponumber}&OTP=${otp}`, {
+    const resp = await fetch(`https://po-webapi.alrashidabetong.com:6060/api/PODetails?recepient=${recipient}&PONumber=${ponumber}&OTP=${otp}`, {
         headers: {
             'Content-Type': 'application/json',
             "Accept": "application/json; odata=verbose"

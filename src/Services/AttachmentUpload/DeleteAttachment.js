@@ -1,5 +1,5 @@
 const DeleteAttachment = async (refId,title,path) => {
- const resp = await fetch(`https://po-webapi.alrashidabetong.com/api/Attachment/deletefile?refId=${refId}&title=${title}&path=${path}`, {
+ const resp = await fetch(`https://po-webapi.alrashidabetong.com:6060/api/Attachment/deletefile?refId=${refId}&title=${title}&path=${path}`, {
      method:'DELETE',
      headers: {
          'Content-Type': 'application/json',

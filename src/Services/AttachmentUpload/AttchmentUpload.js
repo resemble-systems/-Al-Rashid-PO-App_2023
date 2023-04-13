@@ -8,7 +8,7 @@ const AttachmentUpload = async (attachmentdata) => {
   },
   body: JSON.stringify(attachmentdata)
 }
- const resp = await fetch(`https://po-webapi.alrashidabetong.com/api/attachment/Upload`, requestOptions);
+ const resp = await fetch(`https://po-webapi.alrashidabetong.com:6060/api/attachment/Upload`, requestOptions);
  const data = await resp.json();
  console.log("Attachment Upload Response API",data);
  return data;

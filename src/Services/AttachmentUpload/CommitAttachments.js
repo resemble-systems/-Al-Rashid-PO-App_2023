@@ -1,5 +1,5 @@
 const CommitAttachments = async (refId) => {
- const resp = await fetch(`https://po-webapi.alrashidabetong.com/api/Attachment/CommitAttachments?refId=${refId}`, {
+ const resp = await fetch(`https://po-webapi.alrashidabetong.com:6060/api/Attachment/CommitAttachments?refId=${refId}`, {
      headers: {
          'Content-Type': 'application/json',
          "Accept": "application/json; odata=verbose"

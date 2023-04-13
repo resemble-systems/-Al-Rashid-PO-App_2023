@@ -116,7 +116,7 @@ deleteAttachment = (deletedItem)=>{
    attachmentTable= this.state.uploadedFiles.map((item,index) =>
         <tr key={index}>
         <td><a className="attachment-link" rel="noopener noreferrer" 
-        href={`https://po-webapi.alrashidabetong.com/api/Attachment/Getfile?title=${item.Title}&path=${item.Path}`} target="_blank">{item.Title}</a></td>
+        href={`https://po-webapi.alrashidabetong.com:6060/api/Attachment/Getfile?title=${item.Title}&path=${item.Path}`} target="_blank">{item.Title}</a></td>
         <td>{item.FileSize}</td>
        {(this.props.mode === 'new') ?  <td className="attachment-delete">
         {(!this.state.deleting) ?<Button type="button" 
