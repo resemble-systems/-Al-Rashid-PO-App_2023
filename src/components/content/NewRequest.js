@@ -80,9 +80,9 @@ class NewRequest extends Component {
         (TD) => {
           console.log(TD)
           
-          var check = TD.Body.includes("RW");
-          var DMCcheck =TD.Body.includes("DMC");
-          var PMCcheck =TD.Body.includes("PMC");
+          var check = TD.Body.split("@split")[0].includes("RW");
+          var DMCcheck =TD.Body.split("@split")[0].includes("DMC");
+          var PMCcheck =TD.Body.split("@split")[0].includes("PMC");
           
           if(PMCcheck===true || DMCcheck===true ){
             this.setState({
@@ -317,9 +317,9 @@ class NewRequest extends Component {
           (TD) => {
             console.log(TD)
             
-            var check = TD.Body.includes("RW");
-            var DMCcheck =TD.Body.includes("DMC");
-            var PMCcheck =TD.Body.includes("PMC");
+            var check = TD.Body.split("@split")[0].includes("RW");
+            var DMCcheck =TD.Body.split("@split")[0].includes("DMC");
+            var PMCcheck =TD.Body.split("@split")[0].includes("PMC");
             
             if(PMCcheck===true || DMCcheck===true ){
               this.setState({
